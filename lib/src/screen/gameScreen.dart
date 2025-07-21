@@ -34,9 +34,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
   Set<int> activePlayers = {};
 
-  // BannerAd? _bannerAd;
-
-  BannerAd? _topBannerAd;
   BannerAd? _bottomBannerAd;
   RewardedInterstitialAd? _rewardedInterstitialAd;
   bool _isAdLoaded = false;
@@ -51,20 +48,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     };
 
     resetBoard();
-
-    // Top Banner
-    _topBannerAd = BannerAd(
-      adUnitId: AdHelper.bannerAdUnitId,
-      request: const AdRequest(),
-      size: AdSize.banner,
-      listener: BannerAdListener(
-        onAdLoaded: (ad) => setState(() {}),
-        onAdFailedToLoad: (ad, error) {
-          print('Top banner failed to load: ${error.message}');
-          ad.dispose();
-        },
-      ),
-    )..load();
 
     // Bottom Banner
     _bottomBannerAd = BannerAd(
@@ -316,14 +299,27 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        toolbarHeight: 30,
         automaticallyImplyLeading: false,
+        backgroundColor: const Color.fromARGB(255, 8, 74, 128),
+        leading: IconButton(
+          onPressed: () {
+            Navigator.pop(context);
+          },
+          icon: const Icon(
+            Icons.arrow_back,
+            color: Colors.white,
+          ),
+        ),
+        title: const Text(
+          'Bubble Reaction',
+          style: TextStyle(color: Colors.white),
+        ),
       ),
       body: Stack(
         children: [
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(top: 60.0, bottom: 60.0),
+          Padding(
+            padding: const EdgeInsets.all(8.0),
+            child: SafeArea(
               child: GridView.builder(
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: cols,
@@ -333,18 +329,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
               ),
             ),
           ),
-
-          // Top banner
-          if (_topBannerAd != null)
-            Align(
-              alignment: Alignment.topCenter,
-              child: Container(
-                margin: const EdgeInsets.only(bottom: 50),
-                width: _topBannerAd!.size.width.toDouble(),
-                height: _topBannerAd!.size.height.toDouble(),
-                child: AdWidget(ad: _topBannerAd!),
-              ),
-            ),
 
           // Bottom banner
           if (_bottomBannerAd != null)
