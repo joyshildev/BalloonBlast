@@ -1,6 +1,10 @@
 // ignore_for_file: avoid_print, unused_field
 
+import 'dart:math' as Math;
+
+import 'package:audioplayers/audioplayers.dart';
 import 'package:balloonblast/src/adds/ads_helper.dart';
+import 'package:balloonblast/src/screen/ball3D.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../model/cellModel.dart';
@@ -37,6 +41,7 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   BannerAd? _bottomBannerAd;
   RewardedInterstitialAd? _rewardedInterstitialAd;
   bool _isAdLoaded = false;
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   @override
   void initState() {
@@ -49,7 +54,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
     resetBoard();
 
-    // Bottom Banner
     _bottomBannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
       request: const AdRequest(),
@@ -63,6 +67,13 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
       ),
     )..load();
     _loadAd();
+  }
+
+  Future<void> playBlastSound() async {
+    await _audioPlayer.stop();
+    await _audioPlayer.play(
+      AssetSource('sound/blast.wav'),
+    );
   }
 
   void _loadAd() {
@@ -186,8 +197,10 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   Future<void> explode(int row, int col, int player) async {
     if (gameOver) return;
 
+    playBlastSound();
+
     final i = index(row, col);
-    cells[i].value = Cell(); // Clear this cell
+    cells[i].value = Cell();
 
     final directions = [
       const Offset(0, -1),
@@ -329,8 +342,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
               ),
             ),
           ),
-
-          // Bottom banner
           if (_bottomBannerAd != null)
             Align(
               alignment: Alignment.bottomCenter,
@@ -343,24 +354,11 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
             ),
         ],
       ),
-
-      //   SafeArea(
-      //     child: Padding(
-      //       padding: const EdgeInsets.all(8.0),
-      //       child: GridView.builder(
-      //         gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-      //           crossAxisCount: cols,
-      //         ),
-      //         itemCount: rows * cols,
-      //         itemBuilder: (context, i) => buildCell(i ~/ cols, i % cols),
-      //       ),
-      //     ),
-      //   ),
     );
   }
 }
 
-class CellWidget extends StatelessWidget {
+class CellWidget extends StatefulWidget {
   final Cell cell;
   final Color borderColor;
   final int limit;
@@ -375,28 +373,69 @@ class CellWidget extends StatelessWidget {
   });
 
   @override
+  State<CellWidget> createState() => _CellWidgetState();
+}
+
+class _CellWidgetState extends State<CellWidget>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  double getShakeIntensity(int count) {
+    if (count == 1) return 0.5;
+    if (count == 2) return 1.5;
+    if (count == 3) return 3.0;
+    return 0;
+  }
+
+  @override
   Widget build(BuildContext context) {
     return GestureDetector(
-      onTap: onTap,
+      onTap: widget.onTap,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 300),
         decoration: BoxDecoration(
-          border: Border.all(color: borderColor, width: 1),
+          border: Border.all(color: widget.borderColor, width: 1),
           color: const Color.fromARGB(31, 190, 188, 188),
         ),
         child: Center(
-          child: cell.count > 0
-              ? Wrap(
-                  alignment: WrapAlignment.center,
-                  spacing: 4,
-                  runSpacing: 4,
-                  children: List.generate(
-                    cell.count > limit ? limit : cell.count,
-                    (_) => Icon(
-                      Icons.circle,
-                      color: cell.color,
-                      size: 20,
-                    ),
+          child: widget.cell.count > 0
+              ? AnimatedBuilder(
+                  animation: _controller,
+                  builder: (context, child) {
+                    final intensity = getShakeIntensity(widget.cell.count);
+                    final angle = _controller.value * 2 * 3.1416;
+                    return Transform.translate(
+                      offset: Offset(
+                        intensity * Math.sin(angle),
+                        intensity * Math.cos(angle),
+                      ),
+                      child: Transform.rotate(
+                        angle: widget.cell.count >= 4 ? angle : 0,
+                        child: child,
+                      ),
+                    );
+                  },
+                  child: buildCluster(
+                    widget.cell.count > widget.limit
+                        ? widget.limit
+                        : widget.cell.count,
+                    widget.cell.color,
                   ),
                 )
               : null,
@@ -404,4 +443,57 @@ class CellWidget extends StatelessWidget {
       ),
     );
   }
+}
+
+Widget buildCluster(int count, Color color) {
+  const double size = 22;
+
+  if (count == 1) {
+    return Ball3D(color: color, size: size);
+  }
+
+  if (count == 2) {
+    return SizedBox(
+      width: 48,
+      height: 32,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(left: 6, child: Ball3D(color: color, size: size)),
+          Positioned(right: 6, child: Ball3D(color: color, size: size)),
+        ],
+      ),
+    );
+  }
+
+  if (count == 3) {
+    return SizedBox(
+      width: 50,
+      height: 50,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+              bottom: 4, left: 4, child: Ball3D(color: color, size: size)),
+          Positioned(
+              bottom: 4, right: 4, child: Ball3D(color: color, size: size)),
+          Positioned(top: 4, child: Ball3D(color: color, size: size)),
+        ],
+      ),
+    );
+  }
+
+  return SizedBox(
+    width: 55,
+    height: 55,
+    child: Stack(
+      alignment: Alignment.center,
+      children: [
+        Positioned(top: 0, child: Ball3D(color: color, size: size)),
+        Positioned(bottom: 0, child: Ball3D(color: color, size: size)),
+        Positioned(left: 0, child: Ball3D(color: color, size: size)),
+        Positioned(right: 0, child: Ball3D(color: color, size: size)),
+      ],
+    ),
+  );
 }
