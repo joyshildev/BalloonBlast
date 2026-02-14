@@ -25,8 +25,12 @@ class FCMService {
 
     await flutterLocalNotificationsPlugin.initialize(initSettings);
 
-    String? token = await messaging.getToken();
-    print('📲 FCM Token: $token');
+    try {
+      String? token = await messaging.getToken();
+      print('📲 FCM Token: $token');
+    } catch (e) {
+      print('❌ FCM token not available yet: $e');
+    }
 
     FirebaseMessaging.onMessage.listen((RemoteMessage message) {
       print('📥 Foreground FCM received');
