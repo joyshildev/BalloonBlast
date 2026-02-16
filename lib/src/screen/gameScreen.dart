@@ -12,11 +12,13 @@ import '../model/cellModel.dart';
 class ChainReactionGame extends StatefulWidget {
   final int playerCount;
   final List<Color?> playerSelectColors;
+  final bool isComputerMode;
 
   const ChainReactionGame({
     super.key,
     required this.playerCount,
     required this.playerSelectColors,
+    this.isComputerMode = false,
   });
 
   @override
@@ -42,6 +44,11 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   RewardedInterstitialAd? _rewardedInterstitialAd;
   bool _isAdLoaded = false;
   final AudioPlayer _audioPlayer = AudioPlayer();
+  bool _isPlayingSound = false;
+
+  int blastCountThisTurn = 0;
+  final int maxBlastPerTurn = 10;
+  bool forceSwitchAfterLimit = false;
 
   @override
   void initState() {
@@ -70,10 +77,20 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   }
 
   Future<void> playBlastSound() async {
-    await _audioPlayer.stop();
-    await _audioPlayer.play(
-      AssetSource('sound/blast.wav'),
-    );
+    if (_isPlayingSound) return;
+
+    _isPlayingSound = true;
+
+    try {
+      await _audioPlayer.play(
+        AssetSource('sound/blast.wav'),
+        volume: 0.7,
+      );
+    } catch (_) {}
+
+    Future.delayed(const Duration(milliseconds: 300), () {
+      _isPlayingSound = false;
+    });
   }
 
   void _loadAd() {
@@ -92,7 +109,7 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
             onAdDismissedFullScreenContent: (ad) {
               print('Ad dismissed.');
               ad.dispose();
-              _loadAd(); // Load the next ad
+              _loadAd();
             },
             onAdFailedToShowFullScreenContent: (ad, error) {
               print('Ad failed to show: $error');
@@ -131,6 +148,9 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   @override
   void dispose() {
     _rewardedInterstitialAd?.dispose();
+    _bottomBannerAd?.dispose();
+    _audioPlayer.dispose();
+
     super.dispose();
   }
 
@@ -171,17 +191,27 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     final isExplosion = cellNotifier.value.count > getLimit(row, col);
 
     if (isExplosion) {
+      if (blastCountThisTurn >= maxBlastPerTurn) {
+        forceSwitchAfterLimit = true;
+        return;
+      }
+
+      blastCountThisTurn++;
       pendingExplosions++;
       waitingForExplosion = true;
 
       Future.delayed(const Duration(milliseconds: 250), () async {
         await explode(row, col, thisPlayer);
+
         pendingExplosions--;
 
         if (pendingExplosions == 0) {
           waitingForExplosion = false;
+
           checkWinner();
+
           if (!gameOver) {
+            resetBlastCounter();
             switchPlayer();
           }
         }
@@ -194,23 +224,24 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     }
   }
 
+  void resetBlastCounter() {
+    blastCountThisTurn = 0;
+    forceSwitchAfterLimit = false;
+  }
+
   Future<void> explode(int row, int col, int player) async {
     if (gameOver) return;
-
     playBlastSound();
-
     final i = index(row, col);
     cells[i].value = Cell();
-
     final directions = [
       const Offset(0, -1),
       const Offset(0, 1),
       const Offset(-1, 0),
       const Offset(1, 0),
     ];
-
     for (var dir in directions) {
-      await Future.delayed(const Duration(milliseconds: 50));
+      await Future.delayed(const Duration(milliseconds: 30));
       final newRow = row + dir.dy.toInt();
       final newCol = col + dir.dx.toInt();
       if (isInside(newRow, newCol)) {
@@ -219,11 +250,41 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     }
   }
 
+  void computerMove() {
+    if (gameOver) return;
+
+    List<int> validMoves = [];
+
+    for (int i = 0; i < cells.length; i++) {
+      final cell = cells[i].value;
+
+      if (cell.count == 0 || cell.owner == 2) {
+        validMoves.add(i);
+      }
+    }
+
+    if (validMoves.isNotEmpty) {
+      final randomIndex = validMoves[Math.Random().nextInt(validMoves.length)];
+
+      final row = randomIndex ~/ cols;
+      final col = randomIndex % cols;
+
+      addBall(row, col);
+    }
+  }
+
   void switchPlayer() {
     setState(() {
       currentPlayer = currentPlayer % widget.playerCount + 1;
       print('Switched to Player $currentPlayer');
     });
+    resetBlastCounter();
+
+    if (widget.isComputerMode && currentPlayer == 2 && !gameOver) {
+      Future.delayed(const Duration(milliseconds: 600), () {
+        computerMove();
+      });
+    }
   }
 
   void resetBoard() {
@@ -303,7 +364,10 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         cell: cell,
         borderColor: playerColors[currentPlayer]!,
         limit: limit,
-        onTap: () => addBall(row, col),
+        onTap: () {
+          if (widget.isComputerMode && currentPlayer == 2) return;
+          addBall(row, col);
+        },
       ),
     );
   }
@@ -334,6 +398,8 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
             padding: const EdgeInsets.all(8.0),
             child: SafeArea(
               child: GridView.builder(
+                physics: const NeverScrollableScrollPhysics(),
+                cacheExtent: 1000,
                 gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                   crossAxisCount: cols,
                 ),
@@ -387,12 +453,32 @@ class _CellWidgetState extends State<CellWidget>
     _controller = AnimationController(
       vsync: this,
       duration: const Duration(milliseconds: 600),
-    )..repeat();
+    );
+
+    _updateAnimation();
+  }
+
+  @override
+  void didUpdateWidget(CellWidget oldWidget) {
+    super.didUpdateWidget(oldWidget);
+
+    _updateAnimation();
+  }
+
+  void _updateAnimation() {
+    if (widget.cell.count > 0) {
+      if (!_controller.isAnimating) {
+        _controller.repeat();
+      }
+    } else {
+      _controller.stop();
+    }
   }
 
   @override
   void dispose() {
     _controller.dispose();
+
     super.dispose();
   }
 
@@ -459,8 +545,14 @@ Widget buildCluster(int count, Color color) {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Positioned(left: 6, child: Ball3D(color: color, size: size)),
-          Positioned(right: 6, child: Ball3D(color: color, size: size)),
+          Positioned(
+            left: 6,
+            child: Ball3D(color: color, size: size),
+          ),
+          Positioned(
+            right: 6,
+            child: Ball3D(color: color, size: size),
+          ),
         ],
       ),
     );
@@ -474,10 +566,19 @@ Widget buildCluster(int count, Color color) {
         alignment: Alignment.center,
         children: [
           Positioned(
-              bottom: 4, left: 4, child: Ball3D(color: color, size: size)),
+            bottom: 4,
+            left: 4,
+            child: Ball3D(color: color, size: size),
+          ),
           Positioned(
-              bottom: 4, right: 4, child: Ball3D(color: color, size: size)),
-          Positioned(top: 4, child: Ball3D(color: color, size: size)),
+            bottom: 4,
+            right: 4,
+            child: Ball3D(color: color, size: size),
+          ),
+          Positioned(
+            top: 4,
+            child: Ball3D(color: color, size: size),
+          ),
         ],
       ),
     );
@@ -489,10 +590,22 @@ Widget buildCluster(int count, Color color) {
     child: Stack(
       alignment: Alignment.center,
       children: [
-        Positioned(top: 0, child: Ball3D(color: color, size: size)),
-        Positioned(bottom: 0, child: Ball3D(color: color, size: size)),
-        Positioned(left: 0, child: Ball3D(color: color, size: size)),
-        Positioned(right: 0, child: Ball3D(color: color, size: size)),
+        Positioned(
+          top: 0,
+          child: Ball3D(color: color, size: size),
+        ),
+        Positioned(
+          bottom: 0,
+          child: Ball3D(color: color, size: size),
+        ),
+        Positioned(
+          left: 0,
+          child: Ball3D(color: color, size: size),
+        ),
+        Positioned(
+          right: 0,
+          child: Ball3D(color: color, size: size),
+        ),
       ],
     ),
   );

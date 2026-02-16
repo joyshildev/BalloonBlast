@@ -14,9 +14,11 @@ class Ball3D extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      size: Size(size, size),
-      painter: BallPainter(color),
+    return RepaintBoundary(
+      child: CustomPaint(
+        size: Size(size, size),
+        painter: BallPainter(color),
+      ),
     );
   }
 }
@@ -51,5 +53,7 @@ class BallPainter extends CustomPainter {
   }
 
   @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => true;
+  bool shouldRepaint(covariant BallPainter oldDelegate) {
+    return oldDelegate.color != color;
+  }
 }

@@ -43,6 +43,7 @@ flutter:
     - assets/
     - assets/logo/
     - assets/sound/blast.wav
+    - assets/image/
 
   # list giving the asset and other descriptors for the font. For
   # example:
