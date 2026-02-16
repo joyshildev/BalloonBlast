@@ -23,6 +23,7 @@ dependencies:
   firebase_messaging:
   shared_preferences:
   audioplayers:
+  in_app_update:
 
 flutter_icons:
   image_path: "assets/logo/chainFinal.png"

@@ -5,6 +5,7 @@ import 'package:balloonblast/src/screen/computerPlayer.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:in_app_update/in_app_update.dart';
 import 'gameScreen.dart';
 
 class PlayerSelectionScreen extends StatefulWidget {
@@ -38,6 +39,8 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
     selectedColors =
         List.generate(selectedPlayerCount, (index) => defaultColors[index]);
 
+    checkForUpdate();
+
     InterstitialAd.load(
       adUnitId: AdHelper.getInterstatialAdUnitId,
       request: const AdRequest(),
@@ -54,6 +57,28 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
         },
       ),
     );
+  }
+
+  Future<void> checkForUpdate() async {
+    print('checking for Updated');
+    InAppUpdate.checkForUpdate().then((info) {
+      setState(() {
+        if (info.updateAvailability == UpdateAvailability.updateAvailable) {
+          print('update available');
+          update();
+        }
+      });
+    }).catchError((e) {
+      print(e.toString());
+    });
+  }
+
+  void update() async {
+    print('Updating...');
+    await InAppUpdate.startFlexibleUpdate();
+    InAppUpdate.completeFlexibleUpdate().then((_) {}).catchError((e) {
+      print(e.toString());
+    });
   }
 
   void updatePlayerCount(int count) {
