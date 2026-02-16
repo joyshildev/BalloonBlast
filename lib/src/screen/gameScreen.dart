@@ -4,6 +4,7 @@ import 'dart:math' as Math;
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:balloonblast/src/adds/ads_helper.dart';
+import 'package:balloonblast/src/screen/3Dbox.dart';
 import 'package:balloonblast/src/screen/ball3D.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -404,7 +405,11 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
                   crossAxisCount: cols,
                 ),
                 itemCount: rows * cols,
-                itemBuilder: (context, i) => buildCell(i ~/ cols, i % cols),
+                itemBuilder: (context, index) {
+                  int r = index ~/ cols;
+                  int c = index % cols;
+                  return buildCell(r, c);
+                },
               ),
             ),
           ),
@@ -493,12 +498,8 @@ class _CellWidgetState extends State<CellWidget>
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: widget.onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 300),
-        decoration: BoxDecoration(
-          border: Border.all(color: widget.borderColor, width: 1),
-          color: const Color.fromARGB(31, 190, 188, 188),
-        ),
+      child: CustomPaint(
+        painter: Box3DPainter(widget.borderColor),
         child: Center(
           child: widget.cell.count > 0
               ? AnimatedBuilder(
