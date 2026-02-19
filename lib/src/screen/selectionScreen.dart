@@ -2,6 +2,8 @@
 
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/computerPlayer.dart';
+// import 'package:balloonblast/src/screen/roomScreen.dart';
+// import 'package:balloonblast/src/services/room_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -169,7 +171,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                       await Navigator.push(
                         context,
                         MaterialPageRoute(
-                          builder: (_) => ComputerPlayer(),
+                          builder: (_) => const ComputerPlayer(),
                         ),
                       );
                     },
@@ -336,7 +338,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                 ),
               ),
               Row(
-                mainAxisAlignment: MainAxisAlignment.center,
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   InkWell(
                     onTap: () async {
@@ -354,7 +356,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                     child: Container(
                       margin: const EdgeInsets.symmetric(horizontal: 8),
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 5),
+                          horizontal: 18, vertical: 10),
                       decoration: BoxDecoration(
                         color: const Color.fromARGB(174, 3, 23, 152),
                         borderRadius: BorderRadius.circular(12),
@@ -362,7 +364,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                       child: Row(
                         children: [
                           Image.asset(
-                            'assets/image/team.png',
+                            'assets/logo/team.png',
                           ),
                           const SizedBox(width: 10),
                           const Column(
@@ -372,7 +374,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                                  fontSize: 14,
                                 ),
                               ),
                               Text(
@@ -380,7 +382,76 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                                 style: TextStyle(
                                   color: Colors.white,
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 18,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () async {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Play with Friend – Coming Soon"),
+                          duration: Duration(seconds: 2),
+                        ),
+                      );
+
+                      // _interstitialAd?.show();
+
+                      // await Navigator.push(
+                      //   context,
+                      //   MaterialPageRoute(
+                      //     builder: (_) => RoomScreen(
+                      //       playerCount: selectedPlayerCount,
+                      //       playerSelectColors: selectedColors,
+                      //     ),
+                      //   ),
+                      // );
+
+                      // String playerId =
+                      //     DateTime.now().millisecondsSinceEpoch.toString();
+
+                      // String roomId = await RoomService().createRoom(
+                      //   playerId: playerId,
+                      //   maxPlayers: 2,
+                      // );
+
+                      // print("ROOM CREATED: $roomId");
+                    },
+                    child: Container(
+                      margin: const EdgeInsets.symmetric(horizontal: 8),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 18, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: const Color.fromARGB(173, 108, 2, 85),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Row(
+                        children: [
+                          Image.asset(
+                            'assets/logo/people-networking.png',
+                          ),
+                          const SizedBox(width: 10),
+                          const Column(
+                            children: [
+                              Text(
+                                'Play with',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                ),
+                              ),
+                              Text(
+                                'Friend',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],

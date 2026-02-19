@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, unused_field
+// ignore_for_file: avoid_print, unused_field, deprecated_member_use
 
 import 'dart:math' as Math;
 
@@ -6,6 +6,9 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/3Dbox.dart';
 import 'package:balloonblast/src/screen/ball3D.dart';
+import 'package:balloonblast/src/screen/rules/bengRules.dart';
+import 'package:balloonblast/src/screen/rules/engRules.dart';
+import 'package:balloonblast/src/screen/rules/hindRules.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import '../model/cellModel.dart';
@@ -27,8 +30,8 @@ class ChainReactionGame extends StatefulWidget {
 }
 
 class _ChainReactionGameState extends State<ChainReactionGame> {
-  final int rows = 10;
-  final int cols = 6;
+  late int rows;
+  late int cols;
 
   late List<ValueNotifier<Cell>> cells;
   int currentPlayer = 1;
@@ -54,6 +57,17 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   @override
   void initState() {
     super.initState();
+
+    final width =
+        MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width;
+
+    if (width > 600) {
+      rows = 12;
+      cols = 8;
+    } else {
+      rows = 10;
+      cols = 6;
+    }
 
     playerColors = {
       for (int i = 1; i <= widget.playerCount; i++)
@@ -274,11 +288,29 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     }
   }
 
+  bool isPlayerAlive(int player) {
+    return cells.any(
+      (cell) => cell.value.owner == player && cell.value.count > 0,
+    );
+  }
+
   void switchPlayer() {
+    if (gameOver) return;
+    int nextPlayer = currentPlayer;
+
+    for (int i = 0; i < widget.playerCount; i++) {
+      nextPlayer = nextPlayer % widget.playerCount + 1;
+
+      if (!activePlayers.contains(nextPlayer) || isPlayerAlive(nextPlayer)) {
+        break;
+      }
+    }
+
     setState(() {
-      currentPlayer = currentPlayer % widget.playerCount + 1;
-      print('Switched to Player $currentPlayer');
+      currentPlayer = nextPlayer;
+      print("Switched to Player $currentPlayer");
     });
+
     resetBlastCounter();
 
     if (widget.isComputerMode && currentPlayer == 2 && !gameOver) {
@@ -302,7 +334,11 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     final owners =
         cells.where((c) => c.value.count > 0).map((c) => c.value.owner).toSet();
 
-    if (activePlayers.length > 1 && owners.length == 1 && owners.first != 0) {
+    if (activePlayers.length < widget.playerCount) {
+      return;
+    }
+
+    if (owners.length == 1) {
       gameOver = true;
 
       Future.delayed(const Duration(milliseconds: 300), () {
@@ -392,33 +428,95 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
           'Bubble Reaction',
           style: TextStyle(color: Colors.white),
         ),
+        actions: [
+          PopupMenuButton<String>(
+            icon: const Icon(
+              Icons.info_outline,
+              color: Colors.white,
+            ),
+            onSelected: (value) {
+              if (value == 'en') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const EngRuleScreen(),
+                  ),
+                );
+              } else if (value == 'hi') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const HindiRuleScreen(),
+                  ),
+                );
+              } else if (value == 'bn') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const BnRuleScreen(),
+                  ),
+                );
+              }
+            },
+            itemBuilder: (context) => [
+              const PopupMenuItem(
+                value: 'en',
+                child: Text("English"),
+              ),
+              const PopupMenuItem(
+                value: 'hi',
+                child: Text("हिन्दी (Hindi)"),
+              ),
+              const PopupMenuItem(
+                value: 'bn',
+                child: Text("বাংলা (Bengali)"),
+              ),
+            ],
+          ),
+        ],
       ),
-      body: Stack(
+      body: Column(
         children: [
           Padding(
             padding: const EdgeInsets.all(8.0),
-            child: SafeArea(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                cacheExtent: 1000,
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: cols,
-                ),
-                itemCount: rows * cols,
-                itemBuilder: (context, index) {
-                  int r = index ~/ cols;
-                  int c = index % cols;
-                  return buildCell(r, c);
-                },
-              ),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                double gridWidth = constraints.maxWidth;
+                double gridHeight = constraints.maxHeight;
+
+                double cellWidth = gridWidth / cols;
+                double cellHeight = gridHeight / rows;
+
+                double cellSize = Math.min(cellWidth, cellHeight);
+
+                return Center(
+                  child: SizedBox(
+                    width: cellSize * cols,
+                    height: cellSize * rows,
+                    child: GridView.builder(
+                      physics: const NeverScrollableScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: cols,
+                        childAspectRatio: 1,
+                      ),
+                      itemCount: rows * cols,
+                      itemBuilder: (context, index) {
+                        int r = index ~/ cols;
+                        int c = index % cols;
+                        return buildCell(r, c);
+                      },
+                    ),
+                  ),
+                );
+              },
             ),
           ),
           if (_bottomBannerAd != null)
             Align(
               alignment: Alignment.bottomCenter,
               child: Container(
-                margin: const EdgeInsets.only(bottom: 20),
-                width: _bottomBannerAd!.size.width.toDouble(),
+                margin: const EdgeInsets.symmetric(vertical: 10),
+                width: MediaQuery.of(context).size.width,
                 height: _bottomBannerAd!.size.height.toDouble(),
                 child: AdWidget(ad: _bottomBannerAd!),
               ),
@@ -523,6 +621,7 @@ class _CellWidgetState extends State<CellWidget>
                         ? widget.limit
                         : widget.cell.count,
                     widget.cell.color,
+                    context,
                   ),
                 )
               : null,
@@ -532,8 +631,12 @@ class _CellWidgetState extends State<CellWidget>
   }
 }
 
-Widget buildCluster(int count, Color color) {
-  const double size = 22;
+Widget buildCluster(
+  int count,
+  Color color,
+  BuildContext context,
+) {
+  double size = MediaQuery.of(context).size.width * 0.06;
 
   if (count == 1) {
     return Ball3D(color: color, size: size);
