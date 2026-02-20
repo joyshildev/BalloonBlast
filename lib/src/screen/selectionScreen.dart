@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print
+// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
 
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/computerPlayer.dart';
@@ -109,363 +109,347 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final availablePlayerCounts = List.generate(7, (index) => index + 2);
     return Scaffold(
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.all(16),
-          child: Column(
-            children: [
-              Image.asset(
-                "assets/logo/chainFinal.png",
-                height: 200,
-              ),
-              const Text(
-                'Bubble Reaction',
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.bold,
-                  fontSize: 26,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Positioned.fill(
+            child: Image.asset(
+              'assets/image/bg_img.jpg',
+              fit: BoxFit.cover,
+            ),
+          ),
+          Positioned.fill(
+            child: Container(
+              color: Colors.black.withOpacity(0.25),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  children: [
+                    const SizedBox(height: 100),
+                    _buildHeader(),
+                    const SizedBox(height: 24),
+                    _buildSinglePlayer(),
+                    const SizedBox(height: 24),
+                    _buildMultiPlayer(),
+                  ],
                 ),
               ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.green,
-                    ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Column(
+      children: [
+        CircleAvatar(
+          radius: 80,
+          backgroundColor: Colors.white.withOpacity(0.3),
+          backgroundImage: const AssetImage(
+            "assets/logo/newlogo.jpg",
+          ),
+        ),
+        const SizedBox(height: 10),
+        const Text(
+          'Bubble Reaction',
+          style: TextStyle(
+            fontSize: 28,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+            letterSpacing: 1.2,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget glassButton({
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(20),
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(20),
+          gradient: LinearGradient(
+            colors: [
+              Colors.white.withOpacity(0.25),
+              Colors.white.withOpacity(0.05),
+            ],
+          ),
+          border: Border.all(color: Colors.white.withOpacity(0.3)),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.2),
+              blurRadius: 12,
+              offset: const Offset(0, 6),
+            ),
+          ],
+        ),
+        child: Row(
+          children: [
+            Icon(icon, size: 36, color: Colors.white),
+            const SizedBox(width: 16),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: const TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
                   ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(109, 51, 120, 2),
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    child: const Text(
-                      'SINGLE PLAYER',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
+                ),
+                Text(
+                  subtitle,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Colors.white.withOpacity(0.8),
                   ),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.green,
-                    ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSinglePlayer() {
+    return glassButton(
+      title: "Single Player",
+      subtitle: "Play with Computer",
+      icon: Icons.smart_toy,
+      onTap: () async {
+        _interstitialAd?.show();
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => const ComputerPlayer()),
+        );
+      },
+    );
+  }
+
+  Widget _buildMultiPlayer() {
+    return Column(
+      children: [
+        glassButton(
+          title: "Local Multiplayer",
+          subtitle: "Play on same device",
+          icon: Icons.groups,
+          onTap: () {
+            _showMultiPlayerBottomSheet();
+          },
+        ),
+        const SizedBox(height: 16),
+        glassButton(
+          title: "Play with Friend",
+          subtitle: "Online (Coming Soon)",
+          icon: Icons.public,
+          onTap: () {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text("Coming Soon")),
+            );
+
+            // _interstitialAd?.show();
+
+            // await Navigator.push(
+            //   context,
+            //   MaterialPageRoute(
+            //     builder: (_) => RoomScreen(
+            //       playerCount: selectedPlayerCount,
+            //       playerSelectColors: selectedColors,
+            //     ),
+            //   ),
+            // );
+
+            // String playerId =
+            //     DateTime.now().millisecondsSinceEpoch.toString();
+
+            // String roomId = await RoomService().createRoom(
+            //   playerId: playerId,
+            //   maxPlayers: 2,
+            // );
+
+            // print("ROOM CREATED: $roomId");
+          },
+        ),
+      ],
+    );
+  }
+
+  void _showMultiPlayerBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: false,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return SafeArea(
+              child: Container(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(
+                    top: Radius.circular(24),
                   ),
-                ],
-              ),
-              const SizedBox(height: 16),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  InkWell(
-                    onTap: () async {
-                      _interstitialAd?.show();
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => const ComputerPlayer(),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 20, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(108, 6, 193, 240),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Image.asset(
-                            'assets/image/toy-robot.png',
-                          ),
-                          const SizedBox(width: 10),
-                          const Column(
-                            children: [
-                              Text(
-                                'Play with',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              Text(
-                                'Computer',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 20),
-              Row(
-                children: [
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.purple,
-                    ),
-                  ),
-                  Container(
-                    margin: const EdgeInsets.symmetric(horizontal: 8),
-                    padding:
-                        const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                    decoration: BoxDecoration(
-                      color: const Color.fromARGB(108, 136, 3, 151),
-                      borderRadius: BorderRadius.circular(4),
-                    ),
-                    child: const Text(
-                      'MULTI PLAYER',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                  ),
-                  Expanded(
-                    child: Container(
-                      height: 1,
-                      color: Colors.purple,
-                    ),
-                  ),
-                ],
-              ),
-              Padding(
-                padding: const EdgeInsets.only(left: 16, top: 20),
-                child: Row(
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
-                    const Text("Select Player Count:"),
-                    const SizedBox(width: 10),
-                    DropdownButton2<int>(
-                      value: selectedPlayerCount,
-                      items: availablePlayerCounts
-                          .map(
-                            (count) => DropdownMenuItem(
-                              value: count,
-                              child: Text('$count Players'),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (value) {
-                        if (value != null) updatePlayerCount(value);
-                      },
-                      buttonStyleData: const ButtonStyleData(
-                        height: 40,
-                        width: 140,
+                    Container(
+                      width: 40,
+                      height: 4,
+                      margin: const EdgeInsets.only(bottom: 12),
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(10),
                       ),
-                      dropdownStyleData: DropdownStyleData(
-                        maxHeight: 200,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(10),
+                    ),
+                    const Text(
+                      "Local Multiplayer Setup",
+                      style: TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Row(
+                      children: [
+                        const Text(
+                          "Select Player:",
+                          style: TextStyle(fontWeight: FontWeight.w600),
+                        ),
+                        const SizedBox(width: 14),
+                        DropdownButton<int>(
+                          value: selectedPlayerCount,
+                          items: List.generate(
+                            7,
+                            (index) => DropdownMenuItem(
+                              value: index + 2,
+                              child: Text("${index + 2} Players"),
+                            ),
+                          ),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setModalState(() {
+                                updatePlayerCount(value);
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Expanded(
+                      child: ListView.builder(
+                        itemCount: selectedPlayerCount,
+                        itemBuilder: (context, index) {
+                          return ListTile(
+                            title: Text("Player ${index + 1}"),
+                            trailing: DropdownButton2<Color>(
+                              value: selectedColors[index],
+                              customButton: Container(
+                                width: 28,
+                                height: 28,
+                                decoration: BoxDecoration(
+                                  color: selectedColors[index],
+                                  shape: BoxShape.circle,
+                                  border: Border.all(color: Colors.black26),
+                                ),
+                              ),
+                              items: defaultColors
+                                  .take(selectedPlayerCount)
+                                  .map(
+                                    (color) => DropdownMenuItem<Color>(
+                                      value: color,
+                                      child: Container(
+                                        width: 24,
+                                        height: 24,
+                                        decoration: BoxDecoration(
+                                          color: color,
+                                          shape: BoxShape.circle,
+                                          border:
+                                              Border.all(color: Colors.black26),
+                                        ),
+                                      ),
+                                    ),
+                                  )
+                                  .toList(),
+                              onChanged: (color) {
+                                if (color != null) {
+                                  setModalState(() {
+                                    changePlayerColor(index, color);
+                                  });
+                                }
+                              },
+                              buttonStyleData: const ButtonStyleData(width: 50),
+                              dropdownStyleData: DropdownStyleData(
+                                width: 120,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                            ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.deepPurple,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                        ),
+                        onPressed: () async {
+                          Navigator.pop(context);
+                          _interstitialAd?.show();
+                          await Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (_) => ChainReactionGame(
+                                playerCount: selectedPlayerCount,
+                                playerSelectColors: selectedColors,
+                              ),
+                            ),
+                          );
+                        },
+                        child: const Text(
+                          "PLAY",
+                          style: TextStyle(
+                            fontSize: 18,
+                            color: Colors.white,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ),
-                      menuItemStyleData: const MenuItemStyleData(height: 40),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(height: 5),
-              SizedBox(
-                height: 160,
-                child: ListView.builder(
-                  itemCount: selectedPlayerCount,
-                  itemBuilder: (context, index) {
-                    return ListTile(
-                      title: Text('Player ${index + 1}'),
-                      trailing: DropdownButton2<Color>(
-                        value: selectedColors[index],
-                        customButton: Container(
-                          width: 25,
-                          height: 25,
-                          decoration: BoxDecoration(
-                            color: selectedColors[index],
-                            shape: BoxShape.circle,
-                            border: Border.all(color: Colors.black26),
-                          ),
-                        ),
-                        items: defaultColors
-                            .take(selectedPlayerCount)
-                            .map((color) {
-                          return DropdownMenuItem<Color>(
-                            value: color,
-                            child: Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: color,
-                                shape: BoxShape.circle,
-                                border: Border.all(color: Colors.black26),
-                              ),
-                            ),
-                          );
-                        }).toList(),
-                        onChanged: (color) {
-                          if (color != null) changePlayerColor(index, color);
-                        },
-                        buttonStyleData: const ButtonStyleData(
-                          height: 40,
-                          width: 50,
-                        ),
-                        dropdownStyleData: DropdownStyleData(
-                          maxHeight: 200,
-                          width: 100,
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(10),
-                          ),
-                        ),
-                        menuItemStyleData: const MenuItemStyleData(height: 40),
-                      ),
-                    );
-                  },
-                ),
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  InkWell(
-                    onTap: () async {
-                      _interstitialAd?.show();
-                      await Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) => ChainReactionGame(
-                            playerCount: selectedPlayerCount,
-                            playerSelectColors: selectedColors,
-                          ),
-                        ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(174, 3, 23, 152),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          Image.asset(
-                            'assets/logo/team.png',
-                          ),
-                          const SizedBox(width: 10),
-                          const Column(
-                            children: [
-                              Text(
-                                'Play with',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                'Multi Player',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                  InkWell(
-                    onTap: () async {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Play with Friend – Coming Soon"),
-                          duration: Duration(seconds: 2),
-                        ),
-                      );
-
-                      // _interstitialAd?.show();
-
-                      // await Navigator.push(
-                      //   context,
-                      //   MaterialPageRoute(
-                      //     builder: (_) => RoomScreen(
-                      //       playerCount: selectedPlayerCount,
-                      //       playerSelectColors: selectedColors,
-                      //     ),
-                      //   ),
-                      // );
-
-                      // String playerId =
-                      //     DateTime.now().millisecondsSinceEpoch.toString();
-
-                      // String roomId = await RoomService().createRoom(
-                      //   playerId: playerId,
-                      //   maxPlayers: 2,
-                      // );
-
-                      // print("ROOM CREATED: $roomId");
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 8),
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 18, vertical: 10),
-                      decoration: BoxDecoration(
-                        color: const Color.fromARGB(173, 108, 2, 85),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        children: [
-                          Image.asset(
-                            'assets/logo/people-networking.png',
-                          ),
-                          const SizedBox(width: 10),
-                          const Column(
-                            children: [
-                              Text(
-                                'Play with',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                              Text(
-                                'Friend',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-      ),
+            );
+          },
+        );
+      },
     );
   }
 }
