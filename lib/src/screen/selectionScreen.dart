@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously, use_full_hex_values_for_flutter_colors
 
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/computerPlayer.dart';
@@ -11,7 +11,8 @@ import 'package:in_app_update/in_app_update.dart';
 import 'gameScreen.dart';
 
 class PlayerSelectionScreen extends StatefulWidget {
-  const PlayerSelectionScreen({super.key});
+  final String imgUrl;
+  const PlayerSelectionScreen({super.key, required this.imgUrl});
 
   @override
   State<PlayerSelectionScreen> createState() => _PlayerSelectionScreenState();
@@ -38,6 +39,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   @override
   void initState() {
     super.initState();
+
     selectedColors =
         List.generate(selectedPlayerCount, (index) => defaultColors[index]);
 
@@ -58,6 +60,16 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
           print('Failed to load an interstatial ad: ${err.message}');
         },
       ),
+    );
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+
+    precacheImage(
+      AssetImage(widget.imgUrl),
+      context,
     );
   }
 
@@ -110,13 +122,31 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xfff4d91a4),
       body: Stack(
         fit: StackFit.expand,
         children: [
           Positioned.fill(
             child: Image.asset(
-              'assets/image/bg_img.jpg',
+              widget.imgUrl,
               fit: BoxFit.cover,
+              gaplessPlayback: true,
+              frameBuilder: (
+                BuildContext context,
+                Widget child,
+                int? frame,
+                bool wasSynchronouslyLoaded,
+              ) {
+                if (wasSynchronouslyLoaded) {
+                  return child;
+                }
+
+                return AnimatedOpacity(
+                  opacity: frame == null ? 0 : 1,
+                  duration: const Duration(milliseconds: 0),
+                  child: child,
+                );
+              },
             ),
           ),
           Positioned.fill(

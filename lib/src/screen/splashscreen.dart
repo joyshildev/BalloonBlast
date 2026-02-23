@@ -20,6 +20,7 @@ class _SplashScreenState extends State<SplashScreen>
   late Animation<double> _bankFade;
   late Animation<Offset> _indieSlide;
   late Animation<double> _indieFade;
+  String imgUrl = 'assets/image/bg_img.jpg';
 
   int _playCount = 0;
 
@@ -44,7 +45,7 @@ class _SplashScreenState extends State<SplashScreen>
               Navigator.pushReplacement(
                 context,
                 MaterialPageRoute(
-                  builder: (_) => const PlayerSelectionScreen(),
+                  builder: (_) => PlayerSelectionScreen(imgUrl: imgUrl),
                 ),
               );
             }
