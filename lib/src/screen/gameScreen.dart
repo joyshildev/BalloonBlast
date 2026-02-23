@@ -6,6 +6,7 @@ import 'package:audioplayers/audioplayers.dart';
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/3Dbox.dart';
 import 'package:balloonblast/src/screen/ball3D.dart';
+import 'package:balloonblast/src/screen/iconsBlast/Ball3DIcon.dart';
 import 'package:balloonblast/src/screen/rules/bengRules.dart';
 import 'package:balloonblast/src/screen/rules/engRules.dart';
 import 'package:balloonblast/src/screen/rules/hindRules.dart';
@@ -409,6 +410,18 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     );
   }
 
+  String getTurnText() {
+    if (widget.isComputerMode) {
+      if (currentPlayer == 1) {
+        return "Your Turn";
+      } else {
+        return "Computer Turn";
+      }
+    } else {
+      return "Player $currentPlayer Turn";
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -424,9 +437,26 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
             color: Colors.white,
           ),
         ),
-        title: const Text(
-          'Bubble Reaction',
-          style: TextStyle(color: Colors.white),
+        title: Row(
+          children: [
+            Container(
+              width: 14,
+              height: 14,
+              margin: const EdgeInsets.only(right: 8),
+              decoration: BoxDecoration(
+                color: playerColors[currentPlayer],
+                shape: BoxShape.circle,
+              ),
+            ),
+            Text(
+              getTurnText(),
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
         actions: [
           PopupMenuButton<String>(
@@ -622,6 +652,7 @@ class _CellWidgetState extends State<CellWidget>
                         : widget.cell.count,
                     widget.cell.color,
                     context,
+                    limit: widget.limit,
                   ),
                 )
               : null,
@@ -634,83 +665,77 @@ class _CellWidgetState extends State<CellWidget>
 Widget buildCluster(
   int count,
   Color color,
-  BuildContext context,
-) {
-  double size = MediaQuery.of(context).size.width * 0.06;
+  BuildContext context, {
+  required int limit,
+}) {
+  double size = MediaQuery.of(context).size.width * 0.09;
 
-  if (count == 1) {
-    return Ball3D(color: color, size: size);
+  if (limit == 1 && count == 1) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.1,
+      height: MediaQuery.of(context).size.width * 0.1,
+      child: BlastIcon(
+        icon: "assets/image/icon2.png",
+        size: MediaQuery.of(context).size.width * 0.1,
+        color: color,
+      ),
+    );
   }
+
+  if (limit == 2 && count == 1) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: BlastIcon(
+        icon: "assets/image/icon1.png",
+        size: size,
+        color: color,
+      ),
+    );
+  }
+
+  if (limit == 2 && count == 2) {
+    return SizedBox(
+      width: MediaQuery.of(context).size.width * 0.1,
+      height: MediaQuery.of(context).size.width * 0.1,
+      child: BlastIcon(
+        icon: "assets/image/icon2.png",
+        size: MediaQuery.of(context).size.width * 0.1,
+        color: color,
+      ),
+    );
+  }
+
+  if (limit == 3 && count == 1) {
+    return SizedBox(
+      width: size,
+      height: size,
+      child: Ball3D(
+        color: color,
+        size: size * 0.07,
+      ),
+    );
+  }
+
+  String iconPath = (count == 2 || count == 4)
+      ? "assets/image/icon1.png"
+      : "assets/image/icon2.png";
+
+  double iconSize;
 
   if (count == 2) {
-    return SizedBox(
-      width: 48,
-      height: 32,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            left: 6,
-            child: Ball3D(color: color, size: size),
-          ),
-          Positioned(
-            right: 6,
-            child: Ball3D(color: color, size: size),
-          ),
-        ],
-      ),
-    );
-  }
-
-  if (count == 3) {
-    return SizedBox(
-      width: 50,
-      height: 50,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            bottom: 4,
-            left: 4,
-            child: Ball3D(color: color, size: size),
-          ),
-          Positioned(
-            bottom: 4,
-            right: 4,
-            child: Ball3D(color: color, size: size),
-          ),
-          Positioned(
-            top: 4,
-            child: Ball3D(color: color, size: size),
-          ),
-        ],
-      ),
-    );
+    iconSize = size;
+  } else {
+    iconSize = MediaQuery.of(context).size.width * 0.1;
   }
 
   return SizedBox(
-    width: 55,
-    height: 55,
-    child: Stack(
-      alignment: Alignment.center,
-      children: [
-        Positioned(
-          top: 0,
-          child: Ball3D(color: color, size: size),
-        ),
-        Positioned(
-          bottom: 0,
-          child: Ball3D(color: color, size: size),
-        ),
-        Positioned(
-          left: 0,
-          child: Ball3D(color: color, size: size),
-        ),
-        Positioned(
-          right: 0,
-          child: Ball3D(color: color, size: size),
-        ),
-      ],
+    width: iconSize,
+    height: iconSize,
+    child: BlastIcon(
+      icon: iconPath,
+      size: iconSize,
+      color: color,
     ),
   );
 }

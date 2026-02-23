@@ -12,7 +12,7 @@ class ComputerPlayer extends StatelessWidget {
         Colors.blue, // Human
         Colors.red, // Computer
       ],
-      isComputerMode: true, // 🔥 NEW PARAM
+      isComputerMode: true,
     );
   }
 }

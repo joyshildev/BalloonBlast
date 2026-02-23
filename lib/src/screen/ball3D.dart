@@ -9,14 +9,15 @@ class Ball3D extends StatelessWidget {
   const Ball3D({
     super.key,
     required this.color,
-    this.size = 20,
+    required this.size,
   });
 
   @override
   Widget build(BuildContext context) {
-    return RepaintBoundary(
+    return SizedBox(
+      width: size,
+      height: size,
       child: CustomPaint(
-        size: Size(size, size),
         painter: BallPainter(color),
       ),
     );
@@ -34,20 +35,20 @@ class BallPainter extends CustomPainter {
 
     final paint = Paint()
       ..shader = RadialGradient(
-        center: const Alignment(-0.3, -0.3),
-        radius: 0.8,
+        center: const Alignment(-0.1, -0.1),
+        radius: 0.5,
         colors: [
-          Colors.white.withOpacity(0.9),
-          color,
           color.withOpacity(0.9),
-          Colors.black.withOpacity(0.4),
+          color,
+          color.withOpacity(0.7),
+          color.withOpacity(0.5),
         ],
-        stops: const [0.0, 0.2, 0.7, 1.0],
+        stops: const [0.0, 0.2, 0.5, 1.0],
       ).createShader(rect);
 
     canvas.drawCircle(
       Offset(size.width / 2, size.height / 2),
-      size.width / 2,
+      size.width / 2.6,
       paint,
     );
   }
