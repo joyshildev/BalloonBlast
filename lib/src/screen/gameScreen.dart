@@ -229,27 +229,7 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     return 3;
   }
 
-  void addBall(int row, int col, [int? forcePlayer]) async {
-    bool internet = await hasRealInternet();
-
-    if (!internet) {
-      showDialog(
-        context: context,
-        builder: (_) => AlertDialog(
-          title: const Text("No Internet"),
-          content: const Text("Internet is required to play."),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text("OK"),
-            )
-          ],
-        ),
-      );
-
-      return;
-    }
-
+  void addBall(int row, int col, [int? forcePlayer]) {
     if (gameOver) return;
 
     final i = index(row, col);
@@ -520,8 +500,27 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         cell: cell,
         borderColor: playerColors[currentPlayer]!,
         limit: limit,
-        onTap: () {
+        onTap: () async {
           if (widget.isComputerMode && currentPlayer == 2) return;
+          bool internet = await hasRealInternet();
+
+          if (!internet) {
+            showDialog(
+              context: context,
+              builder: (_) => AlertDialog(
+                title: const Text("No Internet"),
+                content: const Text("Internet is required to play."),
+                actions: [
+                  TextButton(
+                    onPressed: () => Navigator.pop(context),
+                    child: const Text("OK"),
+                  )
+                ],
+              ),
+            );
+
+            return;
+          }
           addBall(row, col);
         },
       ),
@@ -861,7 +860,7 @@ class _CellWidgetState extends State<CellWidget>
                         intensity * Math.cos(angle),
                       ),
                       child: Transform.rotate(
-                        angle: widget.cell.count >= 4 ? angle : 0,
+                        angle: widget.cell.count >= 3 ? angle : 0,
                         child: child,
                       ),
                     );
