@@ -269,24 +269,32 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   void computerMove() {
     if (gameOver) return;
 
-    List<int> validMoves = [];
+    int bestMove = -1;
+    int bestScore = -999999;
 
     for (int i = 0; i < cells.length; i++) {
       final cell = cells[i].value;
 
-      if (cell.count == 0 || cell.owner == 2) {
-        validMoves.add(i);
+      int row = i ~/ cols;
+      int col = i % cols;
+
+      /// valid move
+      if (cell.count != 0 && cell.owner != 2) continue;
+
+      int score = evaluateMoveAdvanced(row, col);
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestMove = i;
       }
     }
 
-    if (validMoves.isNotEmpty) {
-      final randomIndex = validMoves[Math.Random().nextInt(validMoves.length)];
-
-      final row = randomIndex ~/ cols;
-      final col = randomIndex % cols;
-
-      addBall(row, col);
+    if (bestMove == -1) {
+      computerMoveSafe();
+      return;
     }
+
+    addBall(bestMove ~/ cols, bestMove % cols);
   }
 
   bool isPlayerAlive(int player) {
@@ -351,11 +359,49 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
   void showWinnerDialog(int player) {
     final playerColor = playerColors[player]!;
+    final score = getPlayerScore(player);
+
+    bool isComputerGame = widget.isComputerMode;
+
+    String titleText;
+    String subtitleText;
+
+    if (isComputerGame) {
+      if (player == 1) {
+        titleText = "You Win!";
+        subtitleText = "Your Score: $score";
+      } else {
+        titleText = "Computer Wins!";
+        subtitleText = "Computer Score: $score";
+      }
+    } else {
+      titleText = "Player $player Wins!";
+      subtitleText = "Score: $score";
+    }
+
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (_) => AlertDialog(
-        title: const Text('🎉 We Have a Winner!'),
+        title: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text(
+              '🎉 We Have a Winner!',
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              titleText,
+              style: const TextStyle(
+                fontSize: 16,
+              ),
+            ),
+          ],
+        ),
         content: Row(
           children: [
             Container(
@@ -367,7 +413,15 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
                 shape: BoxShape.circle,
               ),
             ),
-            Expanded(child: Text('Player $player wins!')),
+            Expanded(
+              child: Text(
+                subtitleText,
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
           ],
         ),
         actions: [
@@ -410,15 +464,28 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     );
   }
 
+  int getPlayerScore(int player) {
+    int score = 0;
+
+    for (var cell in cells) {
+      if (cell.value.owner == player) {
+        score += cell.value.count;
+      }
+    }
+
+    return score;
+  }
+
   String getTurnText() {
+    int score = getPlayerScore(currentPlayer);
     if (widget.isComputerMode) {
       if (currentPlayer == 1) {
-        return "Your Turn";
+        return "Your Turn(Score: $score)";
       } else {
-        return "Computer Turn";
+        return "Computer Turn(Score: $score)";
       }
     } else {
-      return "Player $currentPlayer Turn";
+      return "Player $currentPlayer Turn(Score: $score)";
     }
   }
 
@@ -554,6 +621,97 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         ],
       ),
     );
+  }
+
+  int evaluateMoveAdvanced(int row, int col) {
+    int score = 0;
+
+    int limit = getLimit(row, col);
+    final cell = cells[index(row, col)].value;
+
+    if (cell.count == limit) {
+      score += 1000;
+    }
+
+    final dirs = [
+      const Offset(0, -1),
+      const Offset(0, 1),
+      const Offset(-1, 0),
+      const Offset(1, 0),
+    ];
+
+    for (var d in dirs) {
+      int r = row + d.dy.toInt();
+      int c = col + d.dx.toInt();
+
+      if (!isInside(r, c)) continue;
+
+      final neighbor = cells[index(r, c)].value;
+      int nLimit = getLimit(r, c);
+
+      if (neighbor.owner == 1 && neighbor.count == nLimit - 1) {
+        score -= 1500;
+      }
+
+      if (neighbor.owner == 1 && neighbor.count < nLimit - 1) {
+        score += 200;
+      }
+
+      if (neighbor.owner == 2 && neighbor.count == nLimit - 1) {
+        score += 300;
+      }
+    }
+
+    if (limit == 1) score += 500;
+
+    if (limit == 2) score += 200;
+    return score;
+  }
+
+  void computerMoveSafe() {
+    List<int> safeMoves = [];
+
+    for (int i = 0; i < cells.length; i++) {
+      final cell = cells[i].value;
+
+      int row = i ~/ cols;
+      int col = i % cols;
+
+      if (cell.count != 0 && cell.owner != 2) continue;
+
+      if (!isDangerousMove(row, col)) {
+        safeMoves.add(i);
+      }
+    }
+
+    if (safeMoves.isNotEmpty) {
+      int pick = safeMoves[Math.Random().nextInt(safeMoves.length)];
+      addBall(pick ~/ cols, pick % cols);
+    }
+  }
+
+  bool isDangerousMove(int row, int col) {
+    final dirs = [
+      const Offset(0, -1),
+      const Offset(0, 1),
+      const Offset(-1, 0),
+      const Offset(1, 0),
+    ];
+
+    for (var d in dirs) {
+      int r = row + d.dy.toInt();
+      int c = col + d.dx.toInt();
+
+      if (!isInside(r, c)) continue;
+
+      final neighbor = cells[index(r, c)].value;
+
+      if (neighbor.owner == 1 && neighbor.count == getLimit(r, c) - 1) {
+        return true;
+      }
+    }
+
+    return false;
   }
 }
 
