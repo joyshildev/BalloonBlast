@@ -1,7 +1,7 @@
-// ignore_for_file: avoid_print, unused_field, deprecated_member_use
+// ignore_for_file: avoid_print, unused_field, deprecated_member_use, use_build_context_synchronously
 
+import 'dart:io';
 import 'dart:math' as Math;
-
 import 'package:audioplayers/audioplayers.dart';
 import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/3Dbox.dart';
@@ -54,6 +54,7 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   int blastCountThisTurn = 0;
   final int maxBlastPerTurn = 10;
   bool forceSwitchAfterLimit = false;
+  bool isInternetAvailable = true;
 
   @override
   void initState() {
@@ -76,6 +77,8 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     };
 
     resetBoard();
+
+    checkInternetOnStart();
 
     _bottomBannerAd = BannerAd(
       adUnitId: AdHelper.bannerAdUnitId,
@@ -161,6 +164,48 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     }
   }
 
+  Future<bool> hasRealInternet() async {
+    try {
+      final result = await InternetAddress.lookup('google.com');
+
+      if (result.isNotEmpty && result[0].rawAddress.isNotEmpty) {
+        return true;
+      }
+    } on SocketException catch (_) {
+      return false;
+    }
+
+    return false;
+  }
+
+  void checkInternetOnStart() async {
+    bool internet = await hasRealInternet();
+
+    if (!internet) {
+      isInternetAvailable = false;
+
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Text("Internet Required"),
+          content: const Text("Please turn on internet to play this game."),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.pop(context);
+              },
+              child: const Text("Exit"),
+            )
+          ],
+        ),
+      );
+    } else {
+      isInternetAvailable = true;
+    }
+  }
+
   @override
   void dispose() {
     _rewardedInterstitialAd?.dispose();
@@ -184,7 +229,27 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     return 3;
   }
 
-  void addBall(int row, int col, [int? forcePlayer]) {
+  void addBall(int row, int col, [int? forcePlayer]) async {
+    bool internet = await hasRealInternet();
+
+    if (!internet) {
+      showDialog(
+        context: context,
+        builder: (_) => AlertDialog(
+          title: const Text("No Internet"),
+          content: const Text("Internet is required to play."),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text("OK"),
+            )
+          ],
+        ),
+      );
+
+      return;
+    }
+
     if (gameOver) return;
 
     final i = index(row, col);
@@ -278,7 +343,6 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
       int row = i ~/ cols;
       int col = i % cols;
 
-      /// valid move
       if (cell.count != 0 && cell.owner != 2) continue;
 
       int score = evaluateMoveAdvanced(row, col);
@@ -580,10 +644,8 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
               builder: (context, constraints) {
                 double gridWidth = constraints.maxWidth;
                 double gridHeight = constraints.maxHeight;
-
                 double cellWidth = gridWidth / cols;
                 double cellHeight = gridHeight / rows;
-
                 double cellSize = Math.min(cellWidth, cellHeight);
 
                 return Center(
