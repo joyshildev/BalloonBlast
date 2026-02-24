@@ -12,6 +12,7 @@ import 'package:balloonblast/src/screen/rules/engRules.dart';
 import 'package:balloonblast/src/screen/rules/hindRules.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../model/cellModel.dart';
 
 class ChainReactionGame extends StatefulWidget {
@@ -56,9 +57,14 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   bool forceSwitchAfterLimit = false;
   bool isInternetAvailable = true;
 
+  int highScore = 0;
+  bool isNewHighScore = false;
+
   @override
   void initState() {
     super.initState();
+
+    loadHighScore();
 
     final width =
         MediaQueryData.fromWindow(WidgetsBinding.instance.window).size.width;
@@ -93,6 +99,25 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
       ),
     )..load();
     _loadAd();
+  }
+
+  Future<void> loadHighScore() async {
+    final prefs = await SharedPreferences.getInstance();
+    highScore = prefs.getInt('high_score') ?? 0;
+  }
+
+  Future<void> saveHighScore(int score) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    if (score > highScore) {
+      highScore = score;
+
+      await prefs.setInt('high_score', score);
+
+      isNewHighScore = true;
+    } else {
+      isNewHighScore = false;
+    }
   }
 
   Future<void> playBlastSound() async {
@@ -401,26 +426,26 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     }
   }
 
-  void showWinnerDialog(int player) {
+  Future<void> showWinnerDialog(int player) async {
     final playerColor = playerColors[player]!;
+
     final score = getPlayerScore(player);
+
+    // ⭐ HIGH SCORE SAVE
+    await saveHighScore(score);
 
     bool isComputerGame = widget.isComputerMode;
 
     String titleText;
-    String subtitleText;
 
     if (isComputerGame) {
       if (player == 1) {
         titleText = "You Win!";
-        subtitleText = "Your Score: $score";
       } else {
         titleText = "Computer Wins!";
-        subtitleText = "Computer Score: $score";
       }
     } else {
       titleText = "Player $player Wins!";
-      subtitleText = "Score: $score";
     }
 
     showDialog(
@@ -446,33 +471,59 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
             ),
           ],
         ),
-        content: Row(
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            Container(
-              width: 20,
-              height: 20,
-              margin: const EdgeInsets.only(right: 8),
-              decoration: BoxDecoration(
-                color: playerColor,
-                shape: BoxShape.circle,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: playerColor,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+                const SizedBox(width: 10),
+                Text(
+                  "Score: $score",
+                  style: const TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              "🏆 High Score: $highScore",
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.bold,
               ),
             ),
-            Expanded(
-              child: Text(
-                subtitleText,
-                style: const TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w600,
+            if (isNewHighScore)
+              const Padding(
+                padding: EdgeInsets.only(top: 8),
+                child: Text(
+                  "🎉 NEW HIGH SCORE!",
+                  style: TextStyle(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                    fontSize: 16,
+                  ),
                 ),
               ),
-            ),
           ],
         ),
         actions: [
           TextButton(
             onPressed: () {
               _showAd();
+
               Navigator.of(context).pop();
+
               Navigator.of(context).maybePop();
             },
             child: const Text('Exit'),
@@ -480,7 +531,9 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
           TextButton(
             onPressed: () {
               _showAd();
+
               Navigator.of(context).pop();
+
               resetBoard();
             },
             child: const Text('Play Again'),

@@ -1,12 +1,10 @@
 // ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously, use_full_hex_values_for_flutter_colors
 
-import 'package:balloonblast/src/adds/ads_helper.dart';
 import 'package:balloonblast/src/screen/computerPlayer.dart';
 // import 'package:balloonblast/src/screen/roomScreen.dart';
 // import 'package:balloonblast/src/services/room_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:in_app_update/in_app_update.dart';
 import 'gameScreen.dart';
 
@@ -34,8 +32,6 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
 
   List<Color?> selectedColors = [];
 
-  InterstitialAd? _interstitialAd;
-
   @override
   void initState() {
     super.initState();
@@ -44,23 +40,6 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
         List.generate(selectedPlayerCount, (index) => defaultColors[index]);
 
     checkForUpdate();
-
-    InterstitialAd.load(
-      adUnitId: AdHelper.getInterstatialAdUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          ad.fullScreenContentCallback = FullScreenContentCallback(
-              onAdDismissedFullScreenContent: (ad) {});
-          setState(() {
-            _interstitialAd = ad;
-          });
-        },
-        onAdFailedToLoad: (err) {
-          print('Failed to load an interstatial ad: ${err.message}');
-        },
-      ),
-    );
   }
 
   @override
@@ -263,9 +242,8 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
       title: "Single Player",
       subtitle: "Play with Computer",
       icon: Icons.smart_toy,
-      onTap: () async {
-        _interstitialAd?.show();
-        await Navigator.push(
+      onTap: () {
+        Navigator.push(
           context,
           MaterialPageRoute(builder: (_) => const ComputerPlayer()),
         );
@@ -450,10 +428,9 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                             borderRadius: BorderRadius.circular(14),
                           ),
                         ),
-                        onPressed: () async {
+                        onPressed: () {
                           Navigator.pop(context);
-                          _interstitialAd?.show();
-                          await Navigator.push(
+                          Navigator.push(
                             context,
                             MaterialPageRoute(
                               builder: (_) => ChainReactionGame(
