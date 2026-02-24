@@ -1,4 +1,4 @@
-// ignore_for_file: avoid_print, unused_field, deprecated_member_use, use_build_context_synchronously
+// ignore_for_file: avoid_print, unused_field, deprecated_member_use, use_build_context_synchronously, file_names, library_prefixes
 
 import 'dart:io';
 import 'dart:math' as Math;
@@ -10,6 +10,7 @@ import 'package:balloonblast/src/screen/iconsBlast/Ball3DIcon.dart';
 import 'package:balloonblast/src/screen/rules/bengRules.dart';
 import 'package:balloonblast/src/screen/rules/engRules.dart';
 import 'package:balloonblast/src/screen/rules/hindRules.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -431,7 +432,9 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
     final score = getPlayerScore(player);
 
-    // ⭐ HIGH SCORE SAVE
+    saveScoreToLeaderboard(score);
+
+    //  HIGH SCORE SAVE
     await saveHighScore(score);
 
     bool isComputerGame = widget.isComputerMode;
@@ -541,6 +544,18 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         ],
       ),
     );
+  }
+
+  Future<void> saveScoreToLeaderboard(int score) async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final name = prefs.getString("player_name") ?? "Unknown";
+
+    await FirebaseFirestore.instance.collection("leaderboard").add({
+      "name": name,
+      "score": score,
+      "time": FieldValue.serverTimestamp(),
+    });
   }
 
   Widget buildCell(int row, int col) {

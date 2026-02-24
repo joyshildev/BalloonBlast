@@ -1,11 +1,14 @@
 // ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously, use_full_hex_values_for_flutter_colors
 
 import 'package:balloonblast/src/screen/computerPlayer.dart';
+import 'package:balloonblast/src/screen/leaderboard/globalLeaderboard.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:balloonblast/src/screen/roomScreen.dart';
 // import 'package:balloonblast/src/services/room_service.dart';
 import 'package:flutter/material.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:in_app_update/in_app_update.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'gameScreen.dart';
 
 class PlayerSelectionScreen extends StatefulWidget {
@@ -18,6 +21,7 @@ class PlayerSelectionScreen extends StatefulWidget {
 
 class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   int selectedPlayerCount = 2;
+  String playerName = "";
 
   final List<Color> defaultColors = [
     Colors.red,
@@ -40,6 +44,8 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
         List.generate(selectedPlayerCount, (index) => defaultColors[index]);
 
     checkForUpdate();
+
+    loadPlayerName();
   }
 
   @override
@@ -50,6 +56,96 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
       AssetImage(widget.imgUrl),
       context,
     );
+  }
+
+  Future<void> loadPlayerName() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final savedName = prefs.getString("player_name") ?? "";
+
+    if (savedName.isEmpty) {
+      askPlayerName();
+    } else {
+      setState(() {
+        playerName = savedName;
+      });
+    }
+  }
+
+  Future<void> askPlayerName() async {
+    TextEditingController controller = TextEditingController();
+
+    await showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (context) {
+          return AlertDialog(
+            title: const Text("Enter Your Name"),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(hintText: "Your Name"),
+            ),
+            actions: [
+              ElevatedButton(
+                child: const Text('Cancel'),
+                onPressed: () {
+                  Navigator.pop(context);
+                },
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  String name = controller.text.trim();
+
+                  if (name.isEmpty) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Please enter your name"),
+                      ),
+                    );
+
+                    return;
+                  }
+
+                  if (name.length < 3) {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text("Name must be at least 3 characters"),
+                      ),
+                    );
+
+                    return;
+                  }
+
+                  playerName = name;
+
+                  final prefs = await SharedPreferences.getInstance();
+
+                  await prefs.setString("player_name", playerName);
+
+                  ///  FIREBASE SAVE ADD HERE
+                  await FirebaseFirestore.instance
+                      .collection("users")
+                      .doc(playerName)
+                      .set({
+                    "name": playerName,
+                    "createdAt": FieldValue.serverTimestamp(),
+                  });
+
+                  Navigator.pop(context);
+
+                  setState(() {});
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text("Signed in as $playerName"),
+                      backgroundColor: Colors.green,
+                    ),
+                  );
+                },
+                child: const Text("Save"),
+              )
+            ],
+          );
+        });
   }
 
   Future<void> checkForUpdate() async {
@@ -139,7 +235,69 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    const SizedBox(height: 100),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        InkWell(
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const GlobalLeaderboard(),
+                              ),
+                            );
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: const Text(
+                              'Leaderboard 🏆',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ),
+                        InkWell(
+                          onTap: () {
+                            loadPlayerName();
+                          },
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.person,
+                                  color: Colors.white,
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 5),
+                                Text(
+                                  playerName.isEmpty ? "Sign-in" : playerName,
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 80),
                     _buildHeader(),
                     const SizedBox(height: 24),
                     _buildSinglePlayer(),
