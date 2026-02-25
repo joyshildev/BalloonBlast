@@ -1,4 +1,4 @@
-// ignore_for_file: file_names
+// ignore_for_file: file_names, prefer_interpolation_to_compose_strings
 
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -27,6 +27,22 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
     myName = prefs.getString("player_name") ?? "";
 
     setState(() {});
+  }
+
+  String getMaskedName(String name, bool isMe) {
+    if (isMe) {
+      return name[0].toUpperCase() + name.substring(1);
+    }
+
+    if (name.length == 1) {
+      return name + "***";
+    }
+
+    if (name.length == 2) {
+      return name.substring(0, 2) + "***";
+    }
+
+    return name.substring(0, 2) + "***";
   }
 
   @override
@@ -59,7 +75,8 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
 
           if (data.isEmpty) return Container();
 
-          int myIndex = data.indexWhere((doc) => doc["name"] == myName);
+          int myIndex =
+              data.indexWhere((doc) => doc.id == myName.toLowerCase());
 
           List listData = data.length > 3 ? data.sublist(3) : [];
 
@@ -77,9 +94,12 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
-                  podium(data[1], 2, 110, 180, data[1]["name"] == myName),
-                  podium(data[0], 1, 130, 210, data[0]["name"] == myName),
-                  podium(data[2], 3, 110, 180, data[2]["name"] == myName),
+                  podium(
+                      data[1], 2, 110, 180, data[1].id == myName.toLowerCase()),
+                  podium(
+                      data[0], 1, 130, 210, data[0].id == myName.toLowerCase()),
+                  podium(
+                      data[2], 3, 110, 180, data[2].id == myName.toLowerCase()),
                 ],
               ),
               const SizedBox(height: 20),
@@ -89,7 +109,7 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
                   itemBuilder: (context, index) {
                     final doc = listData[index];
                     final rank = data.indexOf(doc) + 1;
-                    final isMe = doc["name"] == myName;
+                    final isMe = doc.id == myName.toLowerCase();
                     return Container(
                       margin: const EdgeInsets.symmetric(
                           horizontal: 16, vertical: 6),
@@ -112,8 +132,7 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
                           const SizedBox(width: 15),
                           Expanded(
                             child: Text(
-                              doc["name"][0].toUpperCase() +
-                                  doc["name"].substring(1) +
+                              getMaskedName(doc["name"], isMe) +
                                   (isMe ? " (You)" : ""),
                               style: TextStyle(
                                 color: isMe ? Colors.black : Colors.white,
@@ -237,9 +256,7 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
           ),
           const SizedBox(height: 10),
           Text(
-            doc["name"][0].toUpperCase() +
-                doc["name"].substring(1) +
-                (isMe ? " (You)" : ""),
+            getMaskedName(doc["name"], isMe) + (isMe ? " (You)" : ""),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

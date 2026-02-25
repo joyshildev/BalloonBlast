@@ -60,7 +60,6 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
 
   Future<void> loadPlayerName() async {
     final prefs = await SharedPreferences.getInstance();
-
     final savedName = prefs.getString("player_name") ?? "";
 
     if (savedName.isEmpty) {
@@ -74,78 +73,220 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
 
   Future<void> askPlayerName() async {
     TextEditingController controller = TextEditingController();
+    TextEditingController controllerAge = TextEditingController();
+    bool isLogin = false;
+    bool isChecking = false;
+    bool isAvailable = false;
 
     await showDialog(
-        context: context,
-        barrierDismissible: false,
-        builder: (context) {
-          return AlertDialog(
-            title: const Text("Enter Your Name"),
-            content: TextField(
-              controller: controller,
-              decoration: const InputDecoration(hintText: "Your Name"),
-            ),
-            actions: [
-              ElevatedButton(
-                child: const Text('Cancel'),
-                onPressed: () {
-                  Navigator.pop(context);
-                },
+      context: context,
+      barrierDismissible: false,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setStateDialog) {
+            return AlertDialog(
+              title: const Text(
+                "Account",
+                style: TextStyle(fontWeight: FontWeight.w600),
               ),
-              ElevatedButton(
-                onPressed: () async {
-                  String name = controller.text.trim();
-
-                  if (name.isEmpty) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Please enter your name"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Radio(
+                        value: false,
+                        groupValue: isLogin,
+                        onChanged: (v) {
+                          setStateDialog(() {
+                            isLogin = false;
+                            controller.clear();
+                            isAvailable = false;
+                          });
+                        },
                       ),
-                    );
+                      const Text("Sign Up"),
+                      Radio(
+                        value: true,
+                        groupValue: isLogin,
+                        onChanged: (v) {
+                          setStateDialog(() {
+                            isLogin = true;
 
-                    return;
-                  }
-
-                  if (name.length < 3) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text("Name must be at least 3 characters"),
+                            controller.clear();
+                          });
+                        },
                       ),
-                    );
-
-                    return;
-                  }
-
-                  playerName = name;
-
-                  final prefs = await SharedPreferences.getInstance();
-
-                  await prefs.setString("player_name", playerName);
-
-                  ///  FIREBASE SAVE ADD HERE
-                  await FirebaseFirestore.instance
-                      .collection("users")
-                      .doc(playerName)
-                      .set({
-                    "name": playerName,
-                    "createdAt": FieldValue.serverTimestamp(),
-                  });
-
-                  Navigator.pop(context);
-
-                  setState(() {});
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: Text("Signed in as $playerName"),
-                      backgroundColor: Colors.green,
+                      const Text("Login"),
+                    ],
+                  ),
+                  TextField(
+                    controller: controller,
+                    decoration: const InputDecoration(
+                      hintText: "Enter username",
                     ),
-                  );
-                },
-                child: const Text("Save"),
-              )
-            ],
-          );
-        });
+                    onChanged: (value) async {
+                      String docId = value.trim().toLowerCase();
+
+                      if (!isLogin && docId.length >= 6) {
+                        setStateDialog(() {
+                          isChecking = true;
+                        });
+
+                        var doc = await FirebaseFirestore.instance
+                            .collection("users")
+                            .doc(docId)
+                            .get();
+
+                        setStateDialog(() {
+                          isChecking = false;
+
+                          isAvailable = !doc.exists;
+                        });
+                      }
+
+                      setStateDialog(() {});
+                    },
+                  ),
+                  if (!isLogin)
+                    TextField(
+                      controller: controllerAge,
+                      decoration: const InputDecoration(
+                          hintText: "Enter age (optional)"),
+                      keyboardType: TextInputType.number,
+                    ),
+                  const SizedBox(height: 10),
+                  if (!isLogin && controller.text.trim().length >= 6)
+                    isChecking
+                        ? const CircularProgressIndicator()
+                        : Text(
+                            isAvailable
+                                ? "Username available"
+                                : "Username already taken",
+                            style: TextStyle(
+                              color: isAvailable ? Colors.green : Colors.red,
+                            ),
+                          ),
+                ],
+              ),
+              actions: [
+                ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                  },
+                  child: const Text("Cancel"),
+                ),
+                ElevatedButton(
+                  child: const Text("Submit"),
+                  onPressed: () async {
+                    String displayName = controller.text.trim();
+                    String docId = displayName.toLowerCase();
+
+                    if (displayName.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Username cannot be empty"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+
+                      return;
+                    }
+
+                    if (displayName.length < 6) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("Minimum 6 characters required"),
+                          backgroundColor: Colors.red,
+                        ),
+                      );
+
+                      return;
+                    }
+
+                    if (isLogin) {
+                      var doc = await FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(docId)
+                          .get();
+
+                      if (!doc.exists) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Login failed"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+
+                        return;
+                      }
+
+                      final prefs = await SharedPreferences.getInstance();
+
+                      await prefs.setString("player_name", displayName);
+
+                      playerName = displayName;
+
+                      Navigator.pop(context);
+
+                      setState(() {});
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Welcome back $displayName"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    } else {
+                      var doc = await FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(docId)
+                          .get();
+
+                      if (doc.exists) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text("Username already taken"),
+                            backgroundColor: Colors.red,
+                          ),
+                        );
+
+                        return;
+                      }
+
+                      await FirebaseFirestore.instance
+                          .collection("users")
+                          .doc(docId)
+                          .set({
+                        "name": displayName,
+                        "createdAt": FieldValue.serverTimestamp(),
+                      });
+
+                      final prefs = await SharedPreferences.getInstance();
+
+                      await prefs.setString("player_name", displayName);
+
+                      playerName = displayName;
+
+                      Navigator.pop(context);
+
+                      setState(() {});
+
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text("Account created $displayName"),
+                          backgroundColor: Colors.green,
+                        ),
+                      );
+                    }
+                  },
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
   Future<void> checkForUpdate() async {
@@ -526,7 +667,13 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                         itemCount: selectedPlayerCount,
                         itemBuilder: (context, index) {
                           return ListTile(
-                            title: Text("Player ${index + 1}"),
+                            title: Text(
+                              playerName.isNotEmpty
+                                  ? (index == 0
+                                      ? "${playerName[0].toUpperCase()}${playerName.substring(1)} (You)"
+                                      : "Player $index")
+                                  : "Player ${index + 1}",
+                            ),
                             trailing: DropdownButton2<Color>(
                               value: selectedColors[index],
                               customButton: Container(

@@ -60,10 +60,13 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
   int highScore = 0;
   bool isNewHighScore = false;
+  String myName = "";
 
   @override
   void initState() {
     super.initState();
+
+    loadMyName();
 
     loadHighScore();
 
@@ -102,9 +105,33 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     _loadAd();
   }
 
+  Future<void> loadMyName() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    myName = prefs.getString("player_name") ?? "";
+
+    setState(() {});
+  }
+
   Future<void> loadHighScore() async {
     final prefs = await SharedPreferences.getInstance();
-    highScore = prefs.getInt('high_score') ?? 0;
+
+    String name = prefs.getString("player_name") ?? "";
+
+    if (name.isEmpty) return;
+
+    String docId = name.toLowerCase();
+
+    var doc = await FirebaseFirestore.instance
+        .collection("leaderboard")
+        .doc(docId)
+        .get();
+
+    if (doc.exists) {
+      highScore = doc["score"] ?? 0;
+
+      setState(() {});
+    }
   }
 
   Future<void> saveHighScore(int score) async {
@@ -432,10 +459,12 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
     final score = getPlayerScore(player);
 
-    saveScoreToLeaderboard(score);
+    if (widget.isComputerMode && player == 1 && myName.isNotEmpty ||
+        !widget.isComputerMode && player == 1 && myName.isNotEmpty) {
+      saveScoreToLeaderboard(score);
 
-    //  HIGH SCORE SAVE
-    await saveHighScore(score);
+      await saveHighScore(score);
+    }
 
     bool isComputerGame = widget.isComputerMode;
 
@@ -448,7 +477,11 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         titleText = "Computer Wins!";
       }
     } else {
-      titleText = "Player $player Wins!";
+      if (player == 1 && myName.isNotEmpty) {
+        titleText = "${myName[0].toUpperCase()}${myName.substring(1)} Wins!";
+      } else {
+        titleText = "Player $player Wins!";
+      }
     }
 
     showDialog(
@@ -549,13 +582,33 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   Future<void> saveScoreToLeaderboard(int score) async {
     final prefs = await SharedPreferences.getInstance();
 
-    final name = prefs.getString("player_name") ?? "Unknown";
+    String name = prefs.getString("player_name") ?? "";
 
-    await FirebaseFirestore.instance.collection("leaderboard").add({
-      "name": name,
-      "score": score,
-      "time": FieldValue.serverTimestamp(),
-    });
+    if (name.isEmpty) return;
+
+    String docId = name.toLowerCase();
+
+    final ref = FirebaseFirestore.instance.collection("leaderboard").doc(docId);
+
+    final doc = await ref.get();
+
+    if (doc.exists) {
+      int oldScore = doc["score"] ?? 0;
+
+      if (score > oldScore) {
+        await ref.update({
+          "name": name,
+          "score": score,
+          "time": FieldValue.serverTimestamp(),
+        });
+      }
+    } else {
+      await ref.set({
+        "name": name,
+        "score": score,
+        "time": FieldValue.serverTimestamp(),
+      });
+    }
   }
 
   Widget buildCell(int row, int col) {
@@ -609,15 +662,20 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
 
   String getTurnText() {
     int score = getPlayerScore(currentPlayer);
+
     if (widget.isComputerMode) {
       if (currentPlayer == 1) {
-        return "Your Turn(Score: $score)";
+        return "Your Turn (Score: $score)";
       } else {
-        return "Computer Turn(Score: $score)";
+        return "Computer Turn (Score: $score)";
       }
-    } else {
-      return "Player $currentPlayer Turn(Score: $score)";
     }
+
+    if (currentPlayer == 1 && myName.isNotEmpty) {
+      return "${myName[0].toUpperCase()}${myName.substring(1)} (You) Turn (Score: $score)";
+    }
+
+    return "Player $currentPlayer Turn (Score: $score)";
   }
 
   @override
