@@ -132,8 +132,7 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
                           const SizedBox(width: 15),
                           Expanded(
                             child: Text(
-                              getMaskedName(doc["name"], isMe) +
-                                  (isMe ? " (You)" : ""),
+                              isMe ? "You" : getMaskedName(doc["name"], false),
                               style: TextStyle(
                                 color: isMe ? Colors.black : Colors.white,
                                 fontWeight: FontWeight.bold,
@@ -256,7 +255,7 @@ class _GlobalLeaderboardState extends State<GlobalLeaderboard> {
           ),
           const SizedBox(height: 10),
           Text(
-            getMaskedName(doc["name"], isMe) + (isMe ? " (You)" : ""),
+            isMe ? "You" : getMaskedName(doc["name"], false),
             style: const TextStyle(
               color: Colors.white,
               fontWeight: FontWeight.bold,

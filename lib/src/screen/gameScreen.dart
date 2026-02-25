@@ -463,6 +463,8 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
         !widget.isComputerMode && player == 1 && myName.isNotEmpty) {
       saveScoreToLeaderboard(score);
 
+      await addXP(score);
+
       await saveHighScore(score);
     }
 
@@ -579,6 +581,24 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
     );
   }
 
+  Future<void> addXP(int score) async {
+    if (myName.isEmpty) return;
+
+    int xpToAdd = calculateXP(score);
+
+    final ref = FirebaseFirestore.instance
+        .collection("users")
+        .doc(myName.toLowerCase());
+
+    await ref.update({
+      "xp": FieldValue.increment(xpToAdd),
+    });
+  }
+
+  int calculateXP(int score) {
+    return (score * 0.05).floor();
+  }
+
   Future<void> saveScoreToLeaderboard(int score) async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -681,6 +701,7 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color.fromARGB(255, 30, 41, 65),
       appBar: AppBar(
         automaticallyImplyLeading: false,
         backgroundColor: const Color.fromARGB(255, 8, 74, 128),

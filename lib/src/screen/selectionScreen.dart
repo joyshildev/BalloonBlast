@@ -1,7 +1,7 @@
 // ignore_for_file: avoid_print, deprecated_member_use, use_build_context_synchronously, use_full_hex_values_for_flutter_colors
 
 import 'package:balloonblast/src/screen/computerPlayer.dart';
-import 'package:balloonblast/src/screen/leaderboard/globalLeaderboard.dart';
+import 'package:balloonblast/src/screen/leaderboard/profileScreen.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:balloonblast/src/screen/roomScreen.dart';
 // import 'package:balloonblast/src/services/room_service.dart';
@@ -74,214 +74,348 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   Future<void> askPlayerName() async {
     TextEditingController controller = TextEditingController();
     TextEditingController controllerAge = TextEditingController();
+
     bool isLogin = false;
     bool isChecking = false;
     bool isAvailable = false;
 
-    await showDialog(
+    await showGeneralDialog(
       context: context,
-      barrierDismissible: false,
-      builder: (context) {
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (_, __, ___) {
         return StatefulBuilder(
           builder: (context, setStateDialog) {
-            return AlertDialog(
-              title: const Text(
-                "Account",
-                style: TextStyle(fontWeight: FontWeight.w600),
-              ),
-              content: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Row(
-                    children: [
-                      Radio(
-                        value: false,
-                        groupValue: isLogin,
-                        onChanged: (v) {
-                          setStateDialog(() {
-                            isLogin = false;
-                            controller.clear();
-                            isAvailable = false;
-                          });
-                        },
-                      ),
-                      const Text("Sign Up"),
-                      Radio(
-                        value: true,
-                        groupValue: isLogin,
-                        onChanged: (v) {
-                          setStateDialog(() {
-                            isLogin = true;
+            return Center(
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(
+                  bottom: MediaQuery.of(context).viewInsets.bottom,
+                ),
+                child: Container(
+                  margin: const EdgeInsets.symmetric(horizontal: 20),
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    /// Premium Gradient
+                    gradient: const LinearGradient(
+                      colors: [
+                        Color(0xff0f172a),
+                        Color(0xff1e293b),
+                        Color(0xff020617),
+                      ],
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                    ),
 
-                            controller.clear();
-                          });
-                        },
-                      ),
-                      const Text("Login"),
+                    borderRadius: BorderRadius.circular(30),
+
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(.6),
+                        blurRadius: 30,
+                        offset: const Offset(0, 15),
+                      )
                     ],
                   ),
-                  TextField(
-                    controller: controller,
-                    decoration: const InputDecoration(
-                      hintText: "Enter username",
-                    ),
-                    onChanged: (value) async {
-                      String docId = value.trim().toLowerCase();
-
-                      if (!isLogin && docId.length >= 6) {
-                        setStateDialog(() {
-                          isChecking = true;
-                        });
-
-                        var doc = await FirebaseFirestore.instance
-                            .collection("users")
-                            .doc(docId)
-                            .get();
-
-                        setStateDialog(() {
-                          isChecking = false;
-
-                          isAvailable = !doc.exists;
-                        });
-                      }
-
-                      setStateDialog(() {});
-                    },
-                  ),
-                  if (!isLogin)
-                    TextField(
-                      controller: controllerAge,
-                      decoration: const InputDecoration(
-                          hintText: "Enter age (optional)"),
-                      keyboardType: TextInputType.number,
-                    ),
-                  const SizedBox(height: 10),
-                  if (!isLogin && controller.text.trim().length >= 6)
-                    isChecking
-                        ? const CircularProgressIndicator()
-                        : Text(
-                            isAvailable
-                                ? "Username available"
-                                : "Username already taken",
-                            style: TextStyle(
-                              color: isAvailable ? Colors.green : Colors.red,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text(
+                              "Account",
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text(
+                                "Skip",
+                                style: TextStyle(
+                                  color: Colors.orange,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            )
+                          ],
+                        ),
+                        const SizedBox(height: 20),
+                        Container(
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.black26,
+                            borderRadius: BorderRadius.circular(15),
+                          ),
+                          child: Row(
+                            children: [
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setStateDialog(() {
+                                      isLogin = false;
+                                      controller.clear();
+                                      isAvailable = false;
+                                    });
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: !isLogin
+                                          ? Colors.orange
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Sign Up",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              Expanded(
+                                child: GestureDetector(
+                                  onTap: () {
+                                    setStateDialog(() {
+                                      isLogin = true;
+                                      controller.clear();
+                                    });
+                                  },
+                                  child: Container(
+                                    decoration: BoxDecoration(
+                                      color: isLogin
+                                          ? Colors.orange
+                                          : Colors.transparent,
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    child: const Center(
+                                      child: Text(
+                                        "Login",
+                                        style: TextStyle(color: Colors.white),
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        TextField(
+                          controller: controller,
+                          style: const TextStyle(color: Colors.white),
+                          decoration: InputDecoration(
+                            hintText: "Username",
+                            hintStyle: const TextStyle(color: Colors.white54),
+                            prefixIcon: const Icon(
+                              Icons.person,
+                              color: Colors.orange,
+                            ),
+                            filled: true,
+                            fillColor: Colors.black26,
+                            border: OutlineInputBorder(
+                              borderRadius: BorderRadius.circular(15),
+                              borderSide: BorderSide.none,
                             ),
                           ),
-                ],
+                          onChanged: (value) async {
+                            String docId = value.trim().toLowerCase();
+
+                            if (!isLogin && docId.length >= 6) {
+                              setStateDialog(() {
+                                isChecking = true;
+                              });
+
+                              var doc = await FirebaseFirestore.instance
+                                  .collection("users")
+                                  .doc(docId)
+                                  .get();
+
+                              setStateDialog(() {
+                                isChecking = false;
+
+                                isAvailable = !doc.exists;
+                              });
+                            }
+
+                            setStateDialog(() {});
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        if (!isLogin)
+                          TextField(
+                            controller: controllerAge,
+                            style: const TextStyle(color: Colors.white),
+                            decoration: InputDecoration(
+                              hintText: "Age (optional)",
+                              hintStyle: const TextStyle(color: Colors.white54),
+                              prefixIcon: const Icon(
+                                Icons.cake,
+                                color: Colors.orange,
+                              ),
+                              filled: true,
+                              fillColor: Colors.black26,
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(15),
+                                borderSide: BorderSide.none,
+                              ),
+                            ),
+                          ),
+                        const SizedBox(height: 10),
+                        if (!isLogin && controller.text.trim().length >= 6)
+                          isChecking
+                              ? const CircularProgressIndicator()
+                              : Text(
+                                  isAvailable
+                                      ? "Username available"
+                                      : "Username already taken",
+                                  style: TextStyle(
+                                    color:
+                                        isAvailable ? Colors.green : Colors.red,
+                                  ),
+                                ),
+                        const SizedBox(height: 20),
+                        SizedBox(
+                          width: double.infinity,
+                          height: 55,
+                          child: ElevatedButton(
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.orange,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                            ),
+                            onPressed: () async {
+                              String displayName = controller.text.trim();
+                              String docId = displayName.toLowerCase();
+
+                              if (displayName.isEmpty) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content: Text("Username cannot be empty"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+
+                                return;
+                              }
+
+                              if (displayName.length < 6) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(
+                                    content:
+                                        Text("Minimum 6 characters required"),
+                                    backgroundColor: Colors.red,
+                                  ),
+                                );
+
+                                return;
+                              }
+
+                              if (isLogin) {
+                                var doc = await FirebaseFirestore.instance
+                                    .collection("users")
+                                    .doc(docId)
+                                    .get();
+
+                                if (!doc.exists) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Login failed"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+
+                                  return;
+                                }
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+
+                                await prefs.setString(
+                                    "player_name", displayName);
+
+                                playerName = displayName;
+
+                                Navigator.pop(context);
+
+                                setState(() {});
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content: Text("Welcome back $displayName"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              } else {
+                                var doc = await FirebaseFirestore.instance
+                                    .collection("users")
+                                    .doc(docId)
+                                    .get();
+
+                                if (doc.exists) {
+                                  ScaffoldMessenger.of(context).showSnackBar(
+                                    const SnackBar(
+                                      content: Text("Username already taken"),
+                                      backgroundColor: Colors.red,
+                                    ),
+                                  );
+
+                                  return;
+                                }
+
+                                await FirebaseFirestore.instance
+                                    .collection("users")
+                                    .doc(docId)
+                                    .set({
+                                  "name": displayName,
+                                  "xp": 0,
+                                  "level": 1,
+                                  "createdAt": FieldValue.serverTimestamp(),
+                                });
+
+                                final prefs =
+                                    await SharedPreferences.getInstance();
+
+                                await prefs.setString(
+                                    "player_name", displayName);
+
+                                playerName = displayName;
+
+                                Navigator.pop(context);
+
+                                setState(() {});
+
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(
+                                    content:
+                                        Text("Account created $displayName"),
+                                    backgroundColor: Colors.green,
+                                  ),
+                                );
+                              }
+                            },
+                            child: Text(
+                              isLogin ? "Login" : "Create Account",
+                              style: const TextStyle(
+                                fontSize: 16,
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
               ),
-              actions: [
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                  },
-                  child: const Text("Cancel"),
-                ),
-                ElevatedButton(
-                  child: const Text("Submit"),
-                  onPressed: () async {
-                    String displayName = controller.text.trim();
-                    String docId = displayName.toLowerCase();
-
-                    if (displayName.isEmpty) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Username cannot be empty"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-
-                      return;
-                    }
-
-                    if (displayName.length < 6) {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text("Minimum 6 characters required"),
-                          backgroundColor: Colors.red,
-                        ),
-                      );
-
-                      return;
-                    }
-
-                    if (isLogin) {
-                      var doc = await FirebaseFirestore.instance
-                          .collection("users")
-                          .doc(docId)
-                          .get();
-
-                      if (!doc.exists) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Login failed"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-
-                        return;
-                      }
-
-                      final prefs = await SharedPreferences.getInstance();
-
-                      await prefs.setString("player_name", displayName);
-
-                      playerName = displayName;
-
-                      Navigator.pop(context);
-
-                      setState(() {});
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Welcome back $displayName"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    } else {
-                      var doc = await FirebaseFirestore.instance
-                          .collection("users")
-                          .doc(docId)
-                          .get();
-
-                      if (doc.exists) {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text("Username already taken"),
-                            backgroundColor: Colors.red,
-                          ),
-                        );
-
-                        return;
-                      }
-
-                      await FirebaseFirestore.instance
-                          .collection("users")
-                          .doc(docId)
-                          .set({
-                        "name": displayName,
-                        "createdAt": FieldValue.serverTimestamp(),
-                      });
-
-                      final prefs = await SharedPreferences.getInstance();
-
-                      await prefs.setString("player_name", displayName);
-
-                      playerName = displayName;
-
-                      Navigator.pop(context);
-
-                      setState(() {});
-
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        SnackBar(
-                          content: Text("Account created $displayName"),
-                          backgroundColor: Colors.green,
-                        ),
-                      );
-                    }
-                  },
-                ),
-              ],
             );
           },
         );
@@ -377,44 +511,41 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                 child: Column(
                   children: [
                     Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
                         InkWell(
                           onTap: () {
-                            Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder: (_) => const GlobalLeaderboard(),
-                              ),
-                            );
+                            if (playerName.isEmpty) {
+                              loadPlayerName();
+                            } else {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) => const ProfileScreen(),
+                                ),
+                              );
+                            }
                           },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
+                                horizontal: 24, vertical: 16),
                             decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            child: const Text(
-                              'Leaderboard 🏆',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w500,
+                              borderRadius: BorderRadius.circular(20),
+                              gradient: LinearGradient(
+                                colors: [
+                                  Colors.white.withOpacity(0.25),
+                                  Colors.white.withOpacity(0.05),
+                                ],
                               ),
-                            ),
-                          ),
-                        ),
-                        InkWell(
-                          onTap: () {
-                            loadPlayerName();
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 12, vertical: 6),
-                            decoration: BoxDecoration(
-                              color: Colors.white.withOpacity(0.2),
-                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                  color: Colors.white.withOpacity(0.3)),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 12,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
                             ),
                             child: Row(
                               children: [
