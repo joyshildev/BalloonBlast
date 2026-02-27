@@ -701,10 +701,10 @@ class _ChainReactionGameState extends State<ChainReactionGame> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 30, 41, 65),
+      backgroundColor: const Color(0xff0f172a),
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        backgroundColor: const Color.fromARGB(255, 8, 74, 128),
+        backgroundColor: const Color(0xff0f172a),
         leading: IconButton(
           onPressed: () {
             Navigator.pop(context);

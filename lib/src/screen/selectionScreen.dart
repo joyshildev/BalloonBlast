@@ -2,6 +2,7 @@
 
 import 'package:balloonblast/src/screen/computerPlayer.dart';
 import 'package:balloonblast/src/screen/leaderboard/profileScreen.dart';
+import 'package:balloonblast/src/screen/leaderboard/withdrawTermsSheet.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 // import 'package:balloonblast/src/screen/roomScreen.dart';
 // import 'package:balloonblast/src/services/room_service.dart';
@@ -472,115 +473,140 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xfff4d91a4),
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          Positioned.fill(
-            child: Image.asset(
-              widget.imgUrl,
-              fit: BoxFit.cover,
-              gaplessPlayback: true,
-              frameBuilder: (
-                BuildContext context,
-                Widget child,
-                int? frame,
-                bool wasSynchronouslyLoaded,
-              ) {
-                if (wasSynchronouslyLoaded) {
-                  return child;
-                }
-
-                return AnimatedOpacity(
-                  opacity: frame == null ? 0 : 1,
-                  duration: const Duration(milliseconds: 0),
-                  child: child,
-                );
-              },
-            ),
-          ),
-          Positioned.fill(
-            child: Container(
-              color: Colors.black.withOpacity(0.25),
-            ),
-          ),
-          SafeArea(
-            child: SingleChildScrollView(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  children: [
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.end,
-                      children: [
-                        InkWell(
-                          onTap: () {
-                            if (playerName.isEmpty) {
-                              loadPlayerName();
-                            } else {
-                              Navigator.push(
-                                context,
-                                MaterialPageRoute(
-                                  builder: (_) => const ProfileScreen(),
-                                ),
-                              );
-                            }
-                          },
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                                horizontal: 24, vertical: 16),
-                            decoration: BoxDecoration(
-                              borderRadius: BorderRadius.circular(20),
-                              gradient: LinearGradient(
-                                colors: [
-                                  Colors.white.withOpacity(0.25),
-                                  Colors.white.withOpacity(0.05),
-                                ],
-                              ),
-                              border: Border.all(
-                                  color: Colors.white.withOpacity(0.3)),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withOpacity(0.2),
-                                  blurRadius: 12,
-                                  offset: const Offset(0, 6),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.person,
-                                  color: Colors.white,
-                                  size: 16,
-                                ),
-                                const SizedBox(width: 5),
-                                Text(
-                                  playerName.isEmpty ? "Sign-in" : playerName,
-                                  style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 12,
-                                    fontWeight: FontWeight.w500,
-                                  ),
-                                ),
-                              ],
+      backgroundColor: const Color(0xff0f172a),
+      appBar: AppBar(
+        backgroundColor: const Color(0xff0f172a),
+        automaticallyImplyLeading: false,
+        elevation: 0,
+        toolbarHeight: 16,
+      ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            children: [
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  InkWell(
+                    onTap: () {
+                      showModalBottomSheet(
+                        context: context,
+                        isScrollControlled: true,
+                        backgroundColor: Colors.transparent,
+                        builder: (context) => const WithdrawTermsSheet(),
+                      );
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color.fromARGB(255, 17, 55, 125)
+                                .withOpacity(0.25),
+                            const Color.fromARGB(255, 35, 97, 172)
+                                .withOpacity(0.05),
+                          ],
+                        ),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.3)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: const Row(
+                        children: [
+                          Icon(
+                            Icons.wallet,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          SizedBox(width: 5),
+                          Text(
+                            'WITHDRAW',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 80),
-                    _buildHeader(),
-                    const SizedBox(height: 24),
-                    _buildSinglePlayer(),
-                    const SizedBox(height: 24),
-                    _buildMultiPlayer(),
-                  ],
-                ),
+                  ),
+                  InkWell(
+                    onTap: () {
+                      if (playerName.isEmpty) {
+                        loadPlayerName();
+                      } else {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ProfileScreen(),
+                          ),
+                        );
+                      }
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 24, vertical: 16),
+                      decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(20),
+                        gradient: LinearGradient(
+                          colors: [
+                            const Color.fromARGB(255, 17, 55, 125)
+                                .withOpacity(0.25),
+                            const Color.fromARGB(255, 35, 97, 172)
+                                .withOpacity(0.05),
+                          ],
+                        ),
+                        border:
+                            Border.all(color: Colors.white.withOpacity(0.3)),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 6),
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.person,
+                            color: Colors.white,
+                            size: 16,
+                          ),
+                          const SizedBox(width: 5),
+                          Text(
+                            playerName.isEmpty ? "SIGN IN" : playerName,
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ),
+              const SizedBox(height: 80),
+              _buildHeader(),
+              const SizedBox(height: 24),
+              _buildSinglePlayer(),
+              const SizedBox(height: 24),
+              _buildMultiPlayer(),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }
@@ -624,8 +650,8 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
           borderRadius: BorderRadius.circular(20),
           gradient: LinearGradient(
             colors: [
-              Colors.white.withOpacity(0.25),
-              Colors.white.withOpacity(0.05),
+              const Color.fromARGB(255, 17, 55, 125).withOpacity(0.25),
+              const Color.fromARGB(255, 35, 97, 172).withOpacity(0.05),
             ],
           ),
           border: Border.all(color: Colors.white.withOpacity(0.3)),
@@ -741,7 +767,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
               child: Container(
                 padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
                 decoration: const BoxDecoration(
-                  color: Colors.white,
+                  color: const Color(0xff0f172a),
                   borderRadius: BorderRadius.vertical(
                     top: Radius.circular(24),
                   ),
@@ -763,6 +789,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                       style: TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
+                        color: Colors.white,
                       ),
                     ),
                     const SizedBox(height: 12),
@@ -770,16 +797,24 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                       children: [
                         const Text(
                           "Select Player:",
-                          style: TextStyle(fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Colors.white,
+                          ),
                         ),
                         const SizedBox(width: 14),
                         DropdownButton<int>(
                           value: selectedPlayerCount,
+                          dropdownColor: const Color(0xff020617),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                          ),
                           items: List.generate(
                             7,
-                            (index) => DropdownMenuItem(
-                              value: index + 2,
-                              child: Text("${index + 2} Players"),
+                            (i) => DropdownMenuItem(
+                              value: i + 2,
+                              child: Text("${i + 2} Players"),
                             ),
                           ),
                           onChanged: (value) {
@@ -789,7 +824,7 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                               });
                             }
                           },
-                        ),
+                        )
                       ],
                     ),
                     const SizedBox(height: 8),
@@ -804,6 +839,9 @@ class _PlayerSelectionScreenState extends State<PlayerSelectionScreen> {
                                       ? "${playerName[0].toUpperCase()}${playerName.substring(1)} (You)"
                                       : "Player $index")
                                   : "Player ${index + 1}",
+                              style: const TextStyle(
+                                color: Colors.white,
+                              ),
                             ),
                             trailing: DropdownButton2<Color>(
                               value: selectedColors[index],
